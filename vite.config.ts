@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
-        }
+        '@google/genai': '@google/generative-ai',        }
       }
     };
 });
