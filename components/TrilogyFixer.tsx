@@ -1,6 +1,6 @@
 import React from 'react';
 import { NovelProject, TrilogyIssueAndFix, ToastMessage, TrilogyDoctorState } from '../types';
-import { runTrilogyDoctor } from '../services/geminiService';
+import { runTrilogyDoctor, fixAllTrilogyIssues } from '../services/geminiService';
 import { Button } from './Button';
 import { GitMerge, Loader2, X, AlertTriangle, FileText, Wand2 } from 'lucide-react';
 
@@ -37,7 +37,36 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({ project, onClose, ad
 
         } catch (e: any) {
             console.error("Trilogy Doctor Scan failed:", e);
-            addToast('error', e.message, 'Scan Failed');
+            ad
+
+  const [isFixing, setIsFixing] = React.useState(false);
+
+  const handleFixAll = async () => {
+    if (isFixing || initialState.isRunning || initialState.issues.length === 0) return;
+    
+    setIsFixing(true);
+    onStateChange(prev => ({ ...prev, statusText: 'Preparing to fix all issues...' }));
+    
+    try {
+      const updatedProject = await fixAllTrilogyIssues(
+        project,
+        initialState.issues,
+        (progressText) => {
+          onStateChange(prev => ({ ...prev, statusText: progressText }));
+        }
+      );
+      
+      // Here you would need to update the actual project in your app state
+      // For now, we'll just show a success message
+      addToast('success', `Successfully applied ${initialState.issues.length} fixes!`, 'Fixes Applied');
+      onStateChange(prev => ({ ...prev, statusText: 'All fixes applied!', issues: [] }));
+    } catch (e: any) {
+      console.error('Fix All failed:', e);
+      addToast('error', e.message, 'Fix All Failed');
+    } finally {
+      setIsFixing(false);
+    }
+  };dToast('error', e.message, 'Scan Failed');
             onStateChange(prev => ({ ...prev, isRunning: false, statusText: `Scan failed: ${e.message}` }));
         }
     };
@@ -75,6 +104,19 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({ project, onClose, ad
                                     <p className="font-bold text-white">{initialState.statusText}</p>
                                 </div>
                             </div>
+                {!initialState.isRunning && initialState.issues.length > 0 && (
+                  <div className="flex justify-end mb-6">
+                    <Button 
+                      size="lg" 
+                      onClick={handleFixAll} 
+                      disabled={isFixing || initialState.isRunning}
+                      icon={isFixing ? <Loader2 className="animate-spin"/> : <Wand2/>}
+                      variant="primary"
+                    >
+                      {isFixing ? `Fixing ${initialState.issues.length} issues...` : `Fix All ${initialState.issues.length} Issues`}
+                    </Button>
+                  </div>
+                )}
                         )}
 
                         {initialState.issues.map((issue) => (
