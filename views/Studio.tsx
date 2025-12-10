@@ -15,7 +15,6 @@ import { Button } from '../components/Button';
 import { BookSweep } from '../components/BookSweep';
 import { AgentConsole } from '../components/AgentConsole';
 import { SettingsModal } from '../components/SettingsModal';
-import { VoiceChat } from '../components/VoiceChat';
 import { UATRunner } from '../components/UATRunner';
 import { CommandPalette } from '../components/CommandPalette';
 import { HelpModal } from '../components/HelpModal';
@@ -62,7 +61,6 @@ export const Studio: React.FC<StudioProps> = ({ project, allProjects, onUpdatePr
   const [showGlobalEdit, setShowGlobalEdit] = useState(false);
   const [showSeriesDoctor, setShowSeriesDoctor] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [showUAT, setShowUAT] = useState(false);
   const [showBookFormatter, setShowBookFormatter] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -330,7 +328,6 @@ export const Studio: React.FC<StudioProps> = ({ project, allProjects, onUpdatePr
       addToMoodboard: async () => {},
       corkboardReorder: async () => {},
       addJournalPage: async () => {},
-      toggleVoiceMode: () => setShowVoiceChat(p => !p),
       addJournalSticker: async () => {},
       generateMarketingAsset: async () => {},
       toggleTheme: () => toggleTheme(),
@@ -428,7 +425,6 @@ export const Studio: React.FC<StudioProps> = ({ project, allProjects, onUpdatePr
           onOpenBookSweep={() => setShowBookSweep(true)}
           onOpenAgent={() => setShowAgent(true)}
           onOpenSettings={() => setShowSettings(true)}
-          onOpenVoiceChat={() => setShowVoiceChat(p => !p)}
           onSplitTrilogy={() => setShowTrilogySplitter(true)}
           onOpenGlobalEdit={() => setShowGlobalEdit(true)}
           onOpenSeriesDoctor={() => setShowSeriesDoctor(true)}
@@ -480,7 +476,6 @@ export const Studio: React.FC<StudioProps> = ({ project, allProjects, onUpdatePr
           />
       )}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
-      {showVoiceChat && <VoiceChat onClose={() => setShowVoiceChat(false)}/>}
       {showUAT && <UATRunner actions={uatActions} onClose={() => setShowUAT(false)}/>}
       {showCommandPalette && <CommandPalette 
         project={project} 

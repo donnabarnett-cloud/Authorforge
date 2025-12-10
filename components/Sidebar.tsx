@@ -20,7 +20,6 @@ interface SidebarProps {
   onOpenBookSweep?: () => void;
   onOpenAgent?: () => void;
   onOpenSettings?: () => void;
-  onOpenVoiceChat?: () => void;
   onSplitTrilogy?: () => void;
   onOpenGlobalEdit?: () => void;
   onOpenSeriesDoctor?: () => void;
@@ -33,7 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     currentChapterId, selectedItemId, 
     onChapterSelect, onCharacterSelect, onWorldItemSelect, 
     onAddChapter, onAddCharacter, onAddWorldItem, 
-    onBackToDashboard, onOpenBookSweep, onOpenAgent, onOpenSettings, onOpenVoiceChat, onSplitTrilogy, onOpenGlobalEdit, onOpenSeriesDoctor, onExportProject, onUpdateProject
+    onBackToDashboard, onOpenBookSweep, onOpenAgent, onOpenSettings, onSplitTrilogy, onOpenGlobalEdit, onOpenSeriesDoctor, onExportProject, onUpdateProject
 }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [showTrash, setShowTrash] = useState(false);

@@ -51,6 +51,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, State> {
       );
     }
 
-    return (this.props as any).children ?? null;
+    return (this as any).props.children ?? null;
   }
 }

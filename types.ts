@@ -612,7 +612,6 @@ export interface UATActions {
     addToMoodboard: () => Promise<void>;
     corkboardReorder: () => Promise<void>;
     addJournalPage: () => Promise<void>;
-    toggleVoiceMode: () => void;
     addJournalSticker: () => Promise<void>;
     generateMarketingAsset: () => Promise<void>;
     toggleTheme: () => void;

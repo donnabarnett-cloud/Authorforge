@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { Project, AnalysisResult, ProjectHealth, MediaAnalysisResult, JournalProject, AISettings, SceneBeat, AudienceProfile, MarketingPost, NovelProject, ContinuityIssue, BetaReaderFeedback, BetaReaderPersona, Relationship, TrendingTopic, SEOScore, AIAgent, GlobalEditSuggestion, AIChatMessage, Character, Chapter, Artifact, ScheduledPost, KeywordAnalysis, CompetitorAnalysis, CategoryAnalysis, BookFormatSettings, StoryAnalysis, Subplot, PlotThread, ForeshadowingOpportunity, ViralMoment, ColoringPage, ColoringBookProject, SocialPlatform, ListingOptimization, TrilogyCohesionReport, JournalPage, ApiKey, AnalysisIssue, TrilogyIssueAndFix, SynopsisAnalysis, MediaAnalysisResult as MediaAnalysisResultType, ProjectHealth as ProjectHealthType, ContinuityIssue as ContinuityIssueType, TrilogyCohesionReport as TrilogyCohesionReportType, BookOutline, WorldItem } from "../types";
 import mammoth from 'mammoth';
 import { getEncoding } from 'js-tiktoken';
@@ -148,100 +148,6 @@ const DEFAULT_SETTINGS: AISettings = {
 let currentSettings: AISettings = { ...DEFAULT_SETTINGS };
 let sessionTokens = 0;
 let tokenBreakdown = { writing: 0, analysis: 0, chat: 0, media: 0 };
-
-
-// --- Sound Manager ---
-export class SoundManager {
-    private static instance: SoundManager;
-    public outputContext: AudioContext | null = null;
-    public inputContext: AudioContext | null = null;
-
-    private constructor() {}
-
-    public static getInstance(): SoundManager {
-        if (!SoundManager.instance) {
-            SoundManager.instance = new SoundManager();
-        }
-        return SoundManager.instance;
-    }
-
-    public getOutputContext(sampleRate = 24000): AudioContext {
-        if (!this.outputContext || this.outputContext.state === 'closed') {
-            this.outputContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate });
-        }
-        return this.outputContext;
-    }
-    
-    public getInputContext(sampleRate = 16000): AudioContext {
-        if (!this.inputContext || this.inputContext.state === 'closed') {
-            this.inputContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate });
-        }
-        return this.inputContext;
-    }
-
-    public async resumeOutput() {
-        if (this.outputContext && this.outputContext.state === 'suspended') {
-            await this.outputContext.resume();
-        }
-    }
-}
-
-// --- Audio Encoding/Decoding Helpers ---
-export function decode(base64: string) {
-  const binaryString = atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
-
-function encode(bytes: Uint8Array) {
-  let binary = '';
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
-export async function decodeAudioData(
-  data: Uint8Array,
-  ctx: AudioContext,
-  sampleRate: number,
-  numChannels: number,
-): Promise<AudioBuffer> {
-  const dataInt16 = new Int16Array(data.buffer);
-  const frameCount = dataInt16.length / numChannels;
-  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
-
-  for (let channel = 0; channel < numChannels; channel++) {
-    const channelData = buffer.getChannelData(channel);
-    for (let i = 0; i < frameCount; i++) {
-      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
-    }
-  }
-  return buffer;
-}
-
-// Local interface for GenAI Blob to avoid import issues
-interface GenAIBlob {
-    data: string;
-    mimeType: string;
-}
-
-function createBlob(data: Float32Array): GenAIBlob {
-  const l = data.length;
-  const int16 = new Int16Array(l);
-  for (let i = 0; i < l; i++) {
-    int16[i] = data[i] * 32768;
-  }
-  return {
-    data: encode(new Uint8Array(int16.buffer)),
-    mimeType: 'audio/pcm;rate=16000',
-  };
-}
 
 
 export const getAISettings = (): AISettings => {
@@ -518,47 +424,6 @@ export async function generateChapterContent(title: string, prevContent: string,
 export async function analyzeSelection(selection: string): Promise<string> {
     const result = await generateAIContent({ model: 'gemini-2.5-flash', contents: `Briefly analyze this text: ${selection}` }, 'analysis');
     return result.text || "Could not analyze.";
-}
-
-export async function generateSpeech(text: string): Promise<string | null> {
-    // Force Gemini for Speech
-    const key = getValidKeyForProvider('gemini');
-    if (!key) throw new Error("TTS requires Gemini API key");
-    const ai = new GoogleGenAI({ apiKey: key.key });
-    
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
-            contents: { parts: [{ text }] },
-            config: {
-                responseModalities: [Modality.AUDIO],
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
-            },
-        });
-        
-        return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
-    } catch (e) {
-        console.error("TTS Error", e);
-        return null;
-    }
-}
-
-export async function playAudio(base64Audio: string): Promise<void> {
-    if(!base64Audio) return;
-    const ctx = SoundManager.getInstance().getOutputContext();
-    await SoundManager.getInstance().resumeOutput();
-    
-    const audioBuffer = await decodeAudioData(
-        decode(base64Audio),
-        ctx,
-        24000,
-        1
-    );
-    
-    const source = ctx.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(ctx.destination);
-    source.start();
 }
 
 export async function injectSensoryDetail(selection: string, sense: string): Promise<string> {
@@ -900,90 +765,6 @@ export async function generateListingOptimization(project: NovelProject, keyword
     const prompt = `Generate an optimized Amazon KDP listing for the novel "${project.title}". Include 3 title/subtitle suggestions and a compelling HTML-formatted book description using keywords: ${keywords.join(', ')}. Respond in JSON.`;
     const result = await generateAIContent({ model: 'gemini-3-pro-preview', contents: prompt, config: { responseMimeType: 'application/json' } }, 'writing');
     return extractJSON<ListingOptimization>(result.text) || {} as ListingOptimization;
-}
-
-export class LiveClient {
-    private session: Promise<any> | null = null;
-    private mediaStream: MediaStream | null = null;
-    private audioContext: AudioContext | null = null;
-    private processor: ScriptProcessorNode | null = null;
-    private source: MediaStreamAudioSourceNode | null = null;
-
-    async connect(onMessage: (msg: any) => void, onError: (e: any) => void, onClose: (e: any) => void) {
-        const key = getValidKeyForProvider('gemini');
-        if (!key) {
-            onError(new Error("No valid Gemini API key found."));
-            return;
-        }
-        const ai = new GoogleGenAI({ apiKey: key.key });
-
-        this.session = ai.live.connect({
-            model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-            config: {
-                responseModalities: [Modality.AUDIO],
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } } },
-                inputAudioTranscription: {},
-            },
-            callbacks: {
-                onopen: async () => {
-                    console.log("Live Session Opened");
-                    await this.startAudioInput();
-                },
-                onmessage: (msg) => {
-                    onMessage(msg);
-                },
-                onclose: (e) => {
-                    this.stopAudioInput();
-                    onClose(e);
-                },
-                onerror: (e) => {
-                    console.error("Live Session Error", e);
-                    onError(e);
-                }
-            }
-        });
-    }
-
-    private async startAudioInput() {
-        try {
-            this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-            this.source = this.audioContext.createMediaStreamSource(this.mediaStream);
-            this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
-
-            this.processor.onaudioprocess = (e) => {
-                const inputData = e.inputBuffer.getChannelData(0);
-                const pcmBlob = createBlob(inputData);
-                if (this.session) {
-                    this.session.then(s => s.sendRealtimeInput({ media: pcmBlob }));
-                }
-            };
-
-            this.source.connect(this.processor);
-            this.processor.connect(this.audioContext.destination);
-        } catch (e) {
-            console.error("Failed to start audio input", e);
-        }
-    }
-
-    private stopAudioInput() {
-        this.mediaStream?.getTracks().forEach(t => t.stop());
-        this.processor?.disconnect();
-        this.source?.disconnect();
-        this.audioContext?.close();
-    }
-
-    disconnect() {
-        if (this.session) {
-            this.session.then(s => s.close());
-        }
-        this.stopAudioInput();
-        this.session = null;
-    }
-    
-    send(data: any) {
-        // Placeholder for future text/tool input
-    }
 }
 
 export async function generateJournalPrompts(topic: string): Promise<string[]> {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Edit3, Loader2, Sparkles, X, Microscope, Volume2, Mic, Eye, Ear, Hand, Expand, Minimize, History, RotateCcw, Timer, Flag, Zap, User, ArrowUp, ArrowDown, VolumeX, BookOpen, Clock, Bold, Italic, Heading, Wand2, Glasses } from 'lucide-react';
-import { applyBrush, generateChapterContent, analyzeSelection, generateSpeech, playAudio, injectSensoryDetail, performDeepLineEdit } from '../services/geminiService';
+import { applyBrush, generateChapterContent, analyzeSelection, injectSensoryDetail, performDeepLineEdit } from '../services/geminiService';
 import { Button } from './Button';
 import { ChapterSnapshot, Character, ToastMessage, AIAgent, NovelProject } from '../types';
 import { DiffViewer } from './DiffViewer';
