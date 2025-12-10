@@ -1,0 +1,7 @@
+{
+  "name": "AuthorForge Studio",
+  "description": "The ultimate AI-powered novel writing studio. Create, edit, and publish your stories with intelligent assistance, world-building tools, and professional sweeps.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
