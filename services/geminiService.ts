@@ -1,4 +1,4 @@
-import { GoogleGenAI, Modality, Type, LiveServerMessage } from "@google/genai";
+import { GoogleGenAI, Modality, Type, LiveServerMessage } from "@google/generative-ai";
 import { Project, AnalysisResult, ProjectHealth, MediaAnalysisResult, JournalProject, AISettings, SceneBeat, AudienceProfile, MarketingPost, NovelProject, ContinuityIssue, BetaReaderFeedback, BetaReaderPersona, Relationship, TrendingTopic, SEOScore, AIAgent, GlobalEditSuggestion, AIChatMessage, Character, Chapter, Artifact, ScheduledPost, KeywordAnalysis, CompetitorAnalysis, CategoryAnalysis, BookFormatSettings, StoryAnalysis, Subplot, PlotThread, ForeshadowingOpportunity, ViralMoment, ColoringPage, ColoringBookProject, SocialPlatform, ListingOptimization, TrilogyCohesionReport, JournalPage, ApiKey, AnalysisIssue, TrilogyIssueAndFix, SynopsisAnalysis, MediaAnalysisResult as MediaAnalysisResultType, ProjectHealth as ProjectHealthType, ContinuityIssue as ContinuityIssueType, TrilogyCohesionReport as TrilogyCohesionReportType, BookOutline, WorldItem } from "../types";
 import mammoth from 'mammoth';
 import { getEncoding } from 'js-tiktoken';
