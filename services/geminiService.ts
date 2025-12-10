@@ -899,8 +899,27 @@ export async function findNicheCategories(query: string): Promise<CategoryAnalys
 
 export async function runTrilogyDoctor(project: NovelProject, onProgress: (progressText: string) => void, onIssueFound: (issue: TrilogyIssueAndFix) => void): Promise<void> {
   const context = getEfficientProjectContext(project);
-  const prompt = `Analyze this trilogy for continuity issues, plot holes, and character inconsistencies. Respond in JSON: { "issues": [{ "type": string, "description": string, "chaptersInvolved": [{ "chapterId": string, "chapterTitle": string }], "suggestedFix": string }] }`;
-  
+const prompt = `You are a professional trilogy continuity editor. Perform a COMPREHENSIVE multi-pass analysis of this trilogy.
+
+Analyze the following aspects:
+1. **CONTINUITY ERRORS**: Timeline issues, contradictory facts, location inconsistencies, object descriptions that change
+2. **CHARACTER ARCS**: Character development consistency, motivation changes, relationship dynamics, personality shifts
+3. **PLOT STRUCTURE**: Pacing issues, unresolved plot threads, deus ex machina, logic gaps
+4. **WORLD-BUILDING**: Magic system consistency, geography/location accuracy, established rules violations
+5. **THEMATIC COHESION**: Theme development across books, symbolic consistency, message alignment
+6. **FORESHADOWING**: Unresolved setups, broken promises, missing payoffs
+
+For EACH issue found, respond with a JSON object:
+{
+  "type": "Continuity" | "Plot" | "Character" | "Pacing" | "World-Building" | "Theme",
+  "severity": "Critical" | "Major" | "Minor",
+  "description": "Clear explanation of the issue",
+  "chaptersInvolved": [{"bookNumber": 1, "chapterNumber": 2, "chapterTitle": "..."}],
+  "suggestedFix": "Specific, actionable fix"
+}
+
+TRILOGY CONTENT:
+${context}`;  
   onProgress("Analyzing trilogy for continuity issues...");
   
   const result = await generateAIContent({
@@ -916,4 +935,55 @@ export async function runTrilogyDoctor(project: NovelProject, onProgress: (progr
       onIssueFound({ ...issue, id: uuidv4() });
     }
   }
+}
+
+// Fix all trilogy issues automatically
+export async function fixAllTrilogyIssues(
+  project: NovelProject,
+  issues: TrilogyIssueAndFix[],
+  onProgress: (progressText: string) => void
+): Promise<NovelProject> {
+  const updatedProject = JSON.parse(JSON.stringify(project)) as NovelProject;
+  
+  onProgress(`Starting to fix ${issues.length} issues...`);
+  
+  for (let i = 0; i < issues.length; i++) {
+    const issue = issues[i];
+    onProgress(`Fixing issue ${i + 1}/${issues.length}: ${issue.type}...`);
+    
+    try {
+      // Use AI to apply the suggested fix to the relevant chapters
+      for (const chapterRef of issue.chaptersInvolved) {
+        const book = updatedProject.books.find(b => b.bookNumber === chapterRef.bookNumber);
+        if (!book) continue;
+        
+        const chapter = book.chapters.find(c => c.chapterNumber === chapterRef.chapterNumber);
+        if (!chapter) continue;
+        
+        const fixPrompt = `Apply this fix to the chapter content:
+
+ISSUE: ${issue.description}
+
+SUGGESTED FIX: ${issue.suggestedFix}
+
+CHAPTER CONTENT:
+${chapter.content}
+
+Provide the updated chapter content that implements the fix. Return ONLY the updated content, no explanations.`;
+        
+        const result = await generateAIContent({
+          model: 'gemini-2.5-flash',
+          contents: fixPrompt,
+          config: { responseMimeType: 'text/plain' }
+        }, 'fix');
+        
+        chapter.content = result.text.trim();
+      }
+    } catch (e) {
+      console.error(`Failed to fix issue ${issue.id}:`, e);
+    }
+  }
+  
+  onProgress('All fixes applied successfully!');
+  return updatedProject;
 }
