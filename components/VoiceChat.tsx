@@ -1,7 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
 import { Mic, MicOff, X, Loader2, Volume2, User, Sparkles } from 'lucide-react';
 import { LiveClient, SoundManager, decode, decodeAudioData } from '../services/geminiService';
-import { LiveServerMessage } from '@google/generative-ai';
 
 interface VoiceChatProps {
     onClose: () => void;
