@@ -5,39 +5,41 @@ import { Button } from './Button';
 import { GitMerge, Loader2, X, AlertTriangle, FileText, Wand2 } from 'lucide-react';
 
 interface TrilogyFixerProps {
-    project: NovelProject;
-    onClose: () => void;
-    addToast: (type: ToastMessage['type'], message: string, title?: string) => void;
-    initialState: TrilogyDoctorState;
-    onStateChange: React.Dispatch<React.SetStateAction<TrilogyDoctorState>>;
+  project: NovelProject;
+  onClose: () => void;
+  addToast: (type: ToastMessage['type'], message: string, title?: string) => void;
+  initialState: TrilogyDoctorState;
+  onStateChange: React.Dispatch<React.SetStateAction<TrilogyDoctorState>>;
 }
 
 export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({ project, onClose, addToast, initialState, onStateChange }) => {
 
-    const runScan = async () => {
-        if (initialState.isRunning) return;
+  const runScan = async () => {
+    if (initialState.isRunning) return;
 
-        onStateChange({ isRunning: true, statusText: 'Initializing scan...', issues: [] });
-        
-        try {
-            await runTrilogyDoctor(
-                project,
-                (progressText) => { // onProgress
-                    onStateChange(prev => ({ ...prev, statusText: progressText }));
-                },
-                (newIssue) => { // onIssueFound
-                    onStateChange(prev => ({
-                        ...prev,
-                        issues: [...prev.issues, newIssue]
-                    }));
-                }
-            );
-            
-            onStateChange(prev => ({ ...prev, isRunning: false, statusText: 'Scan complete!' }));
-
-        } catch (e: any) {
-            console.error("Trilogy Doctor Scan failed:", e);
-            ad
+    onStateChange({ isRunning: true, statusText: 'Initializing scan...', issues: [] });
+    
+    try {
+      await runTrilogyDoctor(
+        project,
+        (progressText) => { // onProgress
+          onStateChange(prev => ({ ...prev, statusText: progressText }));
+        },
+        (newIssue) => { // onIssueFound
+          onStateChange(prev => ({
+            ...prev,
+            issues: [...prev.issues, newIssue]
+          }));
+        }
+      );
+      
+      onStateChange(prev => ({ ...prev, isRunning: false, statusText: 'Scan complete!' }));
+    } catch (e: any) {
+      console.error('Trilogy Doctor Scan failed:', e);
+      addToast('error', e.message, 'Scan Failed');
+      onStateChange(prev => ({ ...prev, isRunning: false, statusText: `Scan failed: ${e.message}` }));
+    }
+  };
 
   const [isFixing, setIsFixing] = React.useState(false);
 
@@ -66,90 +68,88 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({ project, onClose, ad
     } finally {
       setIsFixing(false);
     }
-  };dToast('error', e.message, 'Scan Failed');
-            onStateChange(prev => ({ ...prev, isRunning: false, statusText: `Scan failed: ${e.message}` }));
-        }
-    };
+  };
 
-    return (
-        <div className="fixed inset-0 z-50 bg-slate-900/95 flex flex-col animate-fade-in text-white">
-            <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-                <div>
-                    <h2 className="text-2xl font-bold flex items-center"><GitMerge className="mr-3 text-indigo-500"/> Series Doctor</h2>
-                    <p className="text-slate-400 text-sm mt-1">Deep structural & continuity analysis for your entire trilogy.</p>
-                </div>
-                <div className="flex gap-4">
-                    <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full"><X size={24}/></button>
-                </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-8 max-w-5xl mx-auto w-full">
-                {initialState.issues.length === 0 && !initialState.isRunning ? (
-                    <div className="text-center py-20">
-                        <GitMerge size={64} className="mx-auto text-slate-700 mb-6"/>
-                        <h3 className="text-xl font-bold mb-4">Trilogy Architecture & Continuity Scan</h3>
-                        <p className="text-slate-400 max-w-lg mx-auto mb-8">
-                            The AI will perform a multi-pass audit of your entire trilogy, focusing on high-level plot structure, character arcs, pacing, and granular continuity errors. It will ignore prose and focus only on the story's integrity.
-                        </p>
-                        <Button size="lg" onClick={runScan} disabled={initialState.isRunning} icon={initialState.isRunning ? <Loader2 className="animate-spin"/> : <GitMerge/>}>
-                            {initialState.isRunning ? 'Analyzing Series...' : 'Start Series Diagnosis'}
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="space-y-6">
-                        {initialState.isRunning && (
-                            <div className="bg-slate-800 p-4 rounded-lg flex items-center gap-4 text-sm sticky top-0 z-10">
-                                <Loader2 className="animate-spin text-indigo-400"/>
-                                <div className="flex-1">
-                                    <p className="font-bold text-white">{initialState.statusText}</p>
-                                </div>
-                            </div>
-                {!initialState.isRunning && initialState.issues.length > 0 && (
-                  <div className="flex justify-end mb-6">
-                    <Button 
-                      size="lg" 
-                      onClick={handleFixAll} 
-                      disabled={isFixing || initialState.isRunning}
-                      icon={isFixing ? <Loader2 className="animate-spin"/> : <Wand2/>}
-                      variant="primary"
-                    >
-                      {isFixing ? `Fixing ${initialState.issues.length} issues...` : `Fix All ${initialState.issues.length} Issues`}
-                    </Button>
-                  </div>
-                )}
-                        )}
-
-                        {initialState.issues.map((issue) => (
-                            <div key={issue.id} className={`bg-slate-900 border border-slate-800 rounded-xl p-6 transition`}>
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
-                                            issue.type === 'Continuity' ? 'bg-red-900/30 text-red-400' : 
-                                            issue.type === 'Pacing' ? 'bg-amber-900/30 text-amber-400' : 
-                                            'bg-blue-900/30 text-blue-400'
-                                        }`}>{issue.type}</span>
-                                        <span className="text-sm text-slate-400 flex items-center gap-2"><FileText size={12} className="mr-1"/> 
-                                            {issue.chaptersInvolved.map(c => c.chapterTitle).join(', ')}
-                                        </span>
-                                    </div>
-                                    <Button size="sm" variant="secondary" icon={<Wand2 size={14}/>}>Open in Ghostwriter</Button>
-                                </div>
-                                
-                                <p className="text-slate-300 mb-4 text-sm border-l-2 border-slate-700 pl-3">
-                                    {issue.description}
-                                </p>
-                                
-                                <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                                    <div className="flex justify-between items-center text-indigo-400 text-xs font-bold mb-2 uppercase">
-                                        <span>Suggested Fix</span>
-                                    </div>
-                                    <div className="text-sm text-slate-300 whitespace-pre-wrap">{issue.suggestedFix}</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/95 flex flex-col animate-fade-in text-white">
+      <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center"><GitMerge className="mr-3 text-indigo-500"/> Series Doctor</h2>
+          <p className="text-slate-400 text-sm mt-1">Deep structural & continuity analysis for your entire trilogy.</p>
         </div>
-    );
+        <div className="flex gap-4">
+          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full"><X size={24}/></button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-8 max-w-5xl mx-auto w-full">
+        {initialState.issues.length === 0 && !initialState.isRunning ? (
+          <div className="text-center py-20">
+            <GitMerge size={64} className="mx-auto text-slate-700 mb-6"/>
+            <h3 className="text-xl font-bold mb-4">Trilogy Architecture & Continuity Scan</h3>
+            <p className="text-slate-400 max-w-lg mx-auto mb-8">
+              The AI will perform a multi-pass audit of your entire trilogy, focusing on high-level plot structure, character arcs, pacing, and granular continuity errors. It will ignore prose and focus only on the story's integrity.
+            </p>
+            <Button size="lg" onClick={runScan} disabled={initialState.isRunning} icon={initialState.isRunning ? <Loader2 className="animate-spin"/> : <GitMerge/>}>
+              {initialState.isRunning ? 'Analyzing Series...' : 'Start Series Diagnosis'}
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {initialState.isRunning && (
+              <div className="bg-slate-800 p-4 rounded-lg flex items-center gap-4 text-sm sticky top-0 z-10">
+                <Loader2 className="animate-spin text-indigo-400"/>
+                <div className="flex-1">
+                  <p className="font-bold text-white">{initialState.statusText}</p>
+                </div>
+              </div>
+            )}
+            
+            {!initialState.isRunning && initialState.issues.length > 0 && (
+              <div className="flex justify-end mb-6">
+                <Button 
+                  size="lg" 
+                  onClick={handleFixAll} 
+                  disabled={isFixing || initialState.isRunning}
+                  icon={isFixing ? <Loader2 className="animate-spin"/> : <Wand2/>}
+                  variant="primary"
+                >
+                  {isFixing ? `Fixing ${initialState.issues.length} issues...` : `Fix All ${initialState.issues.length} Issues`}
+                </Button>
+              </div>
+            )}
+
+            {initialState.issues.map((issue) => (
+              <div key={issue.id} className={`bg-slate-900 border border-slate-800 rounded-xl p-6 transition`}>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                      issue.type === 'Continuity' ? 'bg-red-900/30 text-red-400' : 
+                      issue.type === 'Pacing' ? 'bg-amber-900/30 text-amber-400' : 
+                      'bg-blue-900/30 text-blue-400'
+                    }`}>{issue.type}</span>
+                    <span className="text-sm text-slate-400 flex items-center gap-2"><FileText size={12} className="mr-1"/> 
+                      {issue.chaptersInvolved.map(c => c.chapterTitle).join(', ')}
+                    </span>
+                  </div>
+                  <Button size="sm" variant="secondary" icon={<Wand2 size={14}/>}>Open in Ghostwriter</Button>
+                </div>
+                
+                <p className="text-slate-300 mb-4 text-sm border-l-2 border-slate-700 pl-3">
+                  {issue.description}
+                </p>
+                
+                <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                  <div className="flex justify-between items-center text-indigo-400 text-xs font-bold mb-2 uppercase">
+                    <span>Suggested Fix</span>
+                  </div>
+                  <div className="text-sm text-slate-300 whitespace-pre-wrap">{issue.suggestedFix}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
