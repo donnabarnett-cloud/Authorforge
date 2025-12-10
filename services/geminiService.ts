@@ -898,20 +898,22 @@ export async function findNicheCategories(query: string): Promise<CategoryAnalys
 }
 
 export async function runTrilogyDoctor(project: NovelProject, onProgress: (progressText: string) => void, onIssueFound: (issue: TrilogyIssueAndFix) => void): Promise<void> {
-    // This is a simulation for demonstration, as full trilogy doctoring is complex. 
-    // In a real implementation, this would use `runBatchedAnalysis` over the entire trilogy content.
-    onProgress("Scanning for major plot holes...");
-    await new Promise(res => setTimeout(res, 1000));
-    
-    // Fallback Mock Logic if no AI response (or just to show UI functionality)
-    onIssueFound({
-        id: uuidv4(),
-        type: 'Plot Hole',
-        description: "The main character's magical sword, which was destroyed in Book 1, reappears in Book 3 without explanation.",
-        chaptersInvolved: [{ chapterId: '1', chapterTitle: 'Book 1: The Final Battle' }, { chapterId: '2', chapterTitle: 'Book 3: The Return' }],
-        suggestedFix: "Add a scene in Book 2 or early Book 3 where the character forges a new, similar-looking sword, or finds a way to repair the original."
-    });
-    
-    onProgress("Analyzing character arcs across all books...");
-    await new Promise(res => setTimeout(res, 1000));
+  const context = getEfficientProjectContext(project);
+  const prompt = `Analyze this trilogy for continuity issues, plot holes, and character inconsistencies. Respond in JSON: { "issues": [{ "type": string, "description": string, "chaptersInvolved": [{ "chapterId": string, "chapterTitle": string }], "suggestedFix": string }] }`;
+  
+  onProgress("Analyzing trilogy for continuity issues...");
+  
+  const result = await generateAIContent({
+    model: 'gemini-3-pro-preview',
+    contents: `${prompt}\n\nTRILOGY:\n${context}`,
+    config: { responseMimeType: 'application/json' }
+  }, 'analysis');
+  
+  const parsed = extractJSON<{ issues: TrilogyIssueAndFix[] }>(result.text);
+  
+  if (parsed && parsed.issues) {
+    for (const issue of parsed.issues) {
+      onIssueFound({ ...issue, id: uuidv4() });
+    }
+  }
 }
