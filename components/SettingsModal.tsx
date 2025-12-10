@@ -15,6 +15,7 @@ const WEBLLM_MODELS = [
   { id: "Hermes-3-Llama-3.1-8B-q4f16_1-MLC", label: "Hermes 3 (8B) - Creative Writing", size: "~5GB" },
   { id: "Qwen2.5-7B-Instruct-q4f16_1-MLC", label: "Qwen 2.5 (7B) - Smart & Fast", size: "~4.5GB" },
   { id: "Mistral-7B-Instruct-v0.3-q4f16_1-MLC", label: "Mistral 7B - High Quality", size: "~4GB" },
+];
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     const [settings, setSettings] = useState<AISettings>(getAISettings());
