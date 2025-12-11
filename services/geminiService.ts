@@ -978,7 +978,9 @@ export async function fixAllTrilogyIssues(
     
     try {
       // Use AI to apply the suggested fix to the relevant chapters
-      for (const chapterRef of issue.chaptersInvolved) {
+              // Ensure chaptersInvolved is always an array
+              const chaptersArray = Array.isArray(issue.chaptersInvolved) ? issue.chaptersInvolved : [issue.chaptersInvolved];
+      for (const chapterRef of issue.chaptersArray) {
         // Find chapter by title match (chapters are flat in NovelProject)
         const chapter = updatedProject.chapters.find(c => c.title === chapterRef);
         if (!chapter) continue;        
@@ -1022,7 +1024,9 @@ export async function fixSingleTrilogyIssue(
   
   try {
     // Apply fix to each chapter involved in the issue
-    for (const chapterRef of issue.chaptersInvolved) {
+          // Ensure chaptersInvolved is always an array
+          const chaptersArray = Array.isArray(issue.chaptersInvolved) ? issue.chaptersInvolved : [issue.chaptersInvolved];
+    for (const chapterRef of issue.chaptersArray) {
       const chapter = updatedProject.chapters.find(c => c.title === chapterRef);
       if (!chapter) continue;
 
