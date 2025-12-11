@@ -898,44 +898,70 @@ export async function findNicheCategories(query: string): Promise<CategoryAnalys
 }
 
 export async function runTrilogyDoctor(project: NovelProject, onProgress: (progressText: string) => void, onIssueFound: (issue: TrilogyIssueAndFix) => void): Promise<void> {
-  const context = getEfficientProjectContext(project);
-const prompt = `You are a professional trilogy continuity editor. Perform a COMPREHENSIVE multi-pass analysis of this trilogy.
-
-Analyze the following aspects:
-1. **CONTINUITY ERRORS**: Timeline issues, contradictory facts, location inconsistencies, object descriptions that change
-2. **CHARACTER ARCS**: Character development consistency, motivation changes, relationship dynamics, personality shifts
-3. **PLOT STRUCTURE**: Pacing issues, unresolved plot threads, deus ex machina, logic gaps
-4. **WORLD-BUILDING**: Magic system consistency, geography/location accuracy, established rules violations
-5. **THEMATIC COHESION**: Theme development across books, symbolic consistency, message alignment
-6. **FORESHADOWING**: Unresolved setups, broken promises, missing payoffs
-
-For EACH issue found, respond with a JSON object:
-{
+  const batchSize = currentSettings.activeProvider === 'webllm' ? 5 : 10;
+  
+  try {
+    onProgress('Starting trilogy analysis...');
+    
+    // Batch chapters for analysis
+    const batches = [];
+    for (let i = 0; i < project.chapters.length; i += batchSize) {
+      batches.push(project.chapters.slice(i, i + batchSize));
+    }
+    
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+      const batch = batches[batchIndex];
+      const startChapter = batchIndex * batchSize + 1;
+      const endChapter = Math.min(startChapter + batchSize - 1, project.chapters.length);
+      
+      onProgress(`Analyzing chapters ${startChapter}-${endChapter} of ${project.chapters.length}...`);
+      
+      const batchContext = batch.map(c => `### ${c.title}\n${c.content.substring(0, 3000)}`).join('\n\n');
+      
+      const prompt = `Analyze these chapters for trilogy-wide issues. For EACH issue found, respond with a JSON array:
+[{
   "type": "Continuity" | "Plot" | "Character" | "Pacing" | "World-Building" | "Theme",
   "severity": "Critical" | "Major" | "Minor",
-  "description": "Clear explanation of the issue",
+  "description": "Clear explanation",
   "chaptersInvolved": [{"bookNumber": 1, "chapterNumber": 2, "chapterTitle": "..."}],
-  "suggestedFix": "Specific, actionable fix"
-}
+  "suggestedFix": "Specific fix"
+}]
 
-TRILOGY CONTENT:
-${context}`;  
-  onProgress("Analyzing trilogy for continuity issues...");
-  
-  const result = await generateAIContent({
-    model: 'gemini-3-pro-preview',
-    contents: `${prompt}\n\nTRILOGY:\n${context}`,
-    config: { responseMimeType: 'application/json' }
-  }, 'analysis');
-  
-  const parsed = extractJSON<{ issues: TrilogyIssueAndFix[] }>(result.text);
-  
-  if (parsed && parsed.issues) {
-    for (const issue of parsed.issues) {
-      onIssueFound({ ...issue, id: uuidv4() });
+Focus on: 1. Timeline issues 2. Character consistency 3. Plot structure 4. World-building rules 5. Themes 6. Foreshadowing
+
+CHAPTERS:
+${batchContext}`;
+
+      const result = await generateAIContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: { responseMimeType: 'application/json' }
+      }, 'analysis');
+      
+      if (!result.text) {
+        console.warn(`Batch ${batchIndex + 1}: No AI response`);
+        continue;
+      }
+      
+      const parsed = extractJSON<TrilogyIssueAndFix[]>(result.text);
+      
+      if (parsed && Array.isArray(parsed)) {
+        for (const issue of parsed) {
+          onIssueFound({ ...issue, id: uuidv4() });
+        }
+      }
+      
+      // Rate limit buffer
+      await new Promise(r => setTimeout(r, 1000));
     }
+    
+    onProgress('Trilogy analysis complete!');
+    
+  } catch (e: any) {
+    console.error('Series Doctor error:', e);
+    throw new Error(`Series Doctor failed: ${e.message}. Check API key in Settings.`);
   }
-}
+}}
 
 // Fix all trilogy issues automatically
 export async function fixAllTrilogyIssues(
