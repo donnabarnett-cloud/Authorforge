@@ -1,6 +1,6 @@
 import React from 'react';
 import { NovelProject, TrilogyIssueAndFix, ToastMessage, TrilogyDoctorState } from '../types';
-import { runTrilogyDoctor, fixAllTrilogyIssues } from '../services/geminiService';
+import { runTrilogyDoctor, fixAllTrilogyIssues, fixSingleTrilogyIssue, generateFixPlan } from '../services/geminiService';
 import { Button } from './Button';
 import { GitMerge, Loader2, X, AlertTriangle, FileText, Wand2 } from 'lucide-react';
 
@@ -42,6 +42,11 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({ project, onClose, ad
   };
 
   const [isFixing, setIsFixing] = React.useState(false);
+    const [fixingIssues, setFixingIssues] = React.useState<Set<string>>(new Set());
+    const [fixedIssues, setFixedIssues] = React.useState<Set<string>>(new Set());
+    const [fixPlans, setFixPlans] = React.useState<Map<string, any>>(new Map());
+    const [viewingPlan, setViewingPlan] = React.useState<string | null>(null);
+    const [loadingPlan, setLoadingPlan] = React.useState<string | null>(null);
 
   const handleFixAll = async () => {
     if (isFixing || initialState.isRunning || initialState.issues.length === 0) return;
@@ -69,6 +74,53 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({ project, onClose, ad
       setIsFixing(false);
     }
   };
+
+    const handleFixSingle = async (issue: TrilogyIssueAndFix) => {
+          if (fixingIssues.has(issue.id)) return;
+
+          setFixingIssues(prev => new Set(prev).add(issue.id));
+
+          try {
+                  const updatedProject = await fixSingleTrilogyIssue(project, issue);
+                  // Update project state would go here
+                  setFixedIssues(prev => new Set(prev).add(issue.id));
+                  addToast('success', `Fixed: ${issue.title}`, 'Fix Applied');
+                } catch (e: any) {
+                  console.error('Fix failed:', e);
+                  addToast('error', e.message, 'Fix Failed');
+                } finally {
+                  setFixingIssues(prev => {
+                            const next = new Set(prev);
+                            next.delete(issue.id);
+                            return next;
+                          });
+                }
+        };
+
+    const handleViewFixPlan = async (issue: TrilogyIssueAndFix) => {
+          if (viewingPlan === issue.id) {
+                  setViewingPlan(null);
+                  return;
+                }
+
+          if (fixPlans.has(issue.id)) {
+                  setViewingPlan(issue.id);
+                  return;
+                }
+
+          setLoadingPlan(issue.id);
+
+          try {
+                  const plan = await generateFixPlan(project, issue);
+                  setFixPlans(prev => new Map(prev).set(issue.id, plan));
+                  setViewingPlan(issue.id);
+                } catch (e: any) {
+                  console.error('Failed to generate fix plan:', e);
+                  addToast('error', e.message, 'Plan Generation Failed');
+                } finally {
+                  setLoadingPlan(null);
+                }
+        };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/95 flex flex-col animate-fade-in text-white">
@@ -145,6 +197,39 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({ project, onClose, ad
                   </div>
                   <div className="text-sm text-slate-300 whitespace-pre-wrap">{issue.suggestedFix}</div>
                 </div>
+
+                              <div className="flex gap-2 mt-4">
+                                                <Button
+                                                                    size="sm"
+                                                                    variant="secondary"
+                                                                    onClick={() => handleViewFixPlan(issue)}
+                                                                    disabled={loadingPlan === issue.id || fixedIssues.has(issue.id)}
+                                                                    icon={loadingPlan === issue.id ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+                                                                  >
+                                                                    {loadingPlan === issue.id ? 'Loading...' : viewingPlan === issue.id ? 'Hide Plan' : 'View Fix Plan'}
+                                                                  </Button>
+
+                                                <Button
+                                                                    size="sm"
+                                                                    variant="primary"
+                                                                    onClick={() => handleFixSingle(issue)}
+                                                                    disabled={fixingIssues.has(issue.id) || fixedIssues.has(issue.id)}
+                                                                    icon={fixingIssues.has(issue.id) ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
+                                                                  >
+                                                                    {fixedIssues.has(issue.id) ? 'Fixed' : fixingIssues.has(issue.id) ? 'Fixing...' : 'Apply Fix'}
+                                                                  </Button>
+                                              </div>
+
+                              {viewingPlan === issue.id && fixPlans.has(issue.id) && (
+                                <div className="mt-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700">
+                                                    <div className="text-xs font-bold text-indigo-400 mb-2 uppercase">Fix Plan</div>
+                                                    <div className="text-sm text-slate-300 whitespace-pre-wrap">
+                                                                          {typeof fixPlans.get(issue.id) === 'string' 
+                                                                                                  ? fixPlans.get(issue.id) 
+                                                                                                  : JSON.stringify(fixPlans.get(issue.id), null, 2)}
+                                                                        </div>
+                                                  </div>
+                              )}
               </div>
             ))}
           </div>
