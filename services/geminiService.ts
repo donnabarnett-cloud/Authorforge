@@ -943,6 +943,8 @@ ${batchContext}`;
       }
       
       const parsed = extractJSON<TrilogyIssueAndFix[]>(result.text);
+                console.log(`Batch ${batchIndex + 1} - AI Response:`, result.text);
+                console.log(`Batch ${batchIndex + 1} - Parsed:`, parsed, 'Is Array:', Array.isArray(parsed), 'Length:', parsed?.length);
       
       if (parsed && Array.isArray(parsed)) {
         for (const issue of parsed) {
