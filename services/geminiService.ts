@@ -961,8 +961,7 @@ ${batchContext}`;
     console.error('Series Doctor error:', e);
     throw new Error(`Series Doctor failed: ${e.message}. Check API key in Settings.`);
   }
-}}
-
+  }
 // Fix all trilogy issues automatically
 export async function fixAllTrilogyIssues(
   project: NovelProject,
