@@ -1,6 +1,6 @@
 import React from 'react';
 import { NovelProject, TrilogyIssueAndFix, ToastMessage, TrilogyDoctorState } from '../types';
-import { runTrilogyDoctor, fixSingleTrilogyIssue } from '../services/geminiService';, generateFixPlan
+import { runTrilogyDoctor, fixSingleTrilogyIssue, generateFixPlan } from '../services/geminiService';
 import { Button } from './Button';
 import { GitMerge, Loader2, X, AlertTriangle, FileText, Wand2, Check } from 'lucide-react';
 
