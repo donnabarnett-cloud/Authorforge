@@ -263,8 +263,7 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({
                     <div className="text-sm text-slate-300 whitespace-pre-wrap">{issue.suggestedFix}</div>
                   </div>
                 </div>
-                        </div>
-                      ))}
+                                              ))}
                     </div>
                   )}
               );
