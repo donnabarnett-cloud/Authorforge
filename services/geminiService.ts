@@ -1060,3 +1060,68 @@ Provide the updated chapter content that implements the fix. Return ONLY the upd
     throw new Error(`Failed to fix issue: ${e.message}. Check API key in Settings.`);
   }
 }
+
+// Generate detailed chapter-by-chapter fix plan
+export async function generateFixPlan(
+  issue: TrilogyIssueAndFix,
+  project: NovelProject
+): Promise<ChapterFixDetail[]> {
+  try {
+    const chapterDetails: ChapterFixDetail[] = [];
+    
+    // Generate fix plan for each chapter involved
+    for (const chapterRef of issue.chaptersInvolved) {
+      const chapter = project.chapters.find(c => c.title === chapterRef.chapterTitle);
+      if (!chapter) continue;
+
+      const planPrompt = `Analyze this ${issue.type} issue and provide SPECIFIC, ACTIONABLE steps to fix it in this chapter.
+
+ISSUE TYPE: ${issue.type}
+ISSUE DESCRIPTION: ${issue.description}
+GENERAL FIX: ${issue.suggestedFix}
+
+CHAPTER: ${chapter.title}
+CHAPTER CONTENT (first 2000 chars):
+${chapter.content.substring(0, 2000)}
+
+Provide a JSON response with this structure:
+{
+  "actions": [
+    {
+      "type": "find-replace" | "add-content" | "remove-content" | "rewrite-section",
+      "description": "Clear description of what to change",
+      "findText": "exact text to find (if find-replace)",
+      "replaceWith": "exact replacement text (if find-replace)",
+      "sectionStart": "text marking start of section (if rewrite)",
+      "sectionEnd": "text marking end of section (if rewrite)",
+      "newContent": "new content to add/insert (if add-content or rewrite)"
+    }
+  ]
+}
+
+Be SPECIFIC. Include exact text snippets for find-replace operations.`;
+
+      const result = await generateAIContent({
+        model: 'gemini-2.5-flash',
+        contents: planPrompt,
+        config: { responseMimeType: 'application/json' }
+      }, 'analysis');
+
+      const parsed = extractJSON<{ actions: any[] }>(result.text);
+      
+      if (parsed && parsed.actions && parsed.actions.length > 0) {
+        chapterDetails.push({
+          chapterTitle: chapter.title,
+          chapterId: chapter.id,
+          actions: parsed.actions
+        });
+      }
+    }
+
+    return chapterDetails;
+    
+  } catch (e: any) {
+    console.error('Failed to generate fix plan:', e);
+    return [];
+  }
+}
