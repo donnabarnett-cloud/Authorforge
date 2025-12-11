@@ -923,8 +923,7 @@ export async function runTrilogyDoctor(project: NovelProject, onProgress: (progr
   "type": "Continuity" | "Plot" | "Character" | "Pacing" | "World-Building" | "Theme",
   "severity": "Critical" | "Major" | "Minor",
   "description": "Clear explanation",
-  "chaptersInvolved": [{"bookNumber": 1, "chapterNumber": 2, "chapterTitle": "..."}],
-  "suggestedFix": "Specific fix"
+ "chaptersInvolved": ["Book 1: Chapter 1", "Book 2: Chapter 5"],  "suggestedFix": "Specific fix"
 }]
 
 Focus on: 1. Timeline issues 2. Character consistency 3. Plot structure 4. World-building rules 5. Themes 6. Foreshadowing
