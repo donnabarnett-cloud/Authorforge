@@ -573,12 +573,27 @@ export interface GlobalEditState {
     suggestions: GlobalEditSuggestion[];
 }
 
+export interface ChapterFixDetail {
+  chapterTitle: string;
+  chapterId: string;
+  actions: {
+    type: 'find-replace' | 'add-content' | 'remove-content' | 'rewrite-section';
+    description: string;
+    findText?: string;
+    replaceWith?: string;
+    sectionStart?: string;
+    sectionEnd?: string;
+    newContent?: string;
+  }[];
+}
+
 export interface TrilogyIssueAndFix {
     id: string;
     type: 'Plot Hole' | 'Continuity' | 'Character Arc' | 'Pacing' | 'Structural';
     description: string;
     chaptersInvolved: { chapterId: string; chapterTitle: string; }[];
     suggestedFix: string; // This will be a detailed instruction for a rewrite
+      chapterFixDetails?: ChapterFixDetail[]; // Optional detailed breakdown per chapter
 }
 
 export interface TrilogyDoctorState {
