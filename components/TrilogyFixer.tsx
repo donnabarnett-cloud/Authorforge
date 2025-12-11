@@ -263,30 +263,6 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({
                     <div className="text-sm text-slate-300 whitespace-pre-wrap">{issue.suggestedFix}</div>
                   </div>
                 </div>
-
-                                  {/* Fix Plan Display */}
-                  {viewingPlan === issue.id && fixPlans.has(issue.id) && (
-                    <div className="mt-4 bg-indigo-900/20 p-4 rounded-lg border border-indigo-800">
-                      <div className="text-indigo-300 text-xs font-bold mb-3 uppercase">Chapter-by-Chapter Fix Plan</div>
-                      {fixPlans.get(issue.id)?.map((chapterPlan: any, idx: number) => (
-                        <div key={idx} className="mb-4 last:mb-0">
-                          <div className="text-sm font-bold text-white mb-2">{chapterPlan.chapterTitle}</div>
-                          {chapterPlan.actions.map((action: any, actionIdx: number) => (
-                            <div key={actionIdx} className="ml-3 mb-2 text-xs">
-                              <div className="flex items-start gap-2">
-                                <span className="text-indigo-400 font-mono">{actionIdx + 1}.</span>
-                                <div className="flex-1">
-                                  <div className="text-slate-300 mb-1">{action.description}</div>
-                                  {action.type === 'find-replace' && action.findText && (
-                                    <div className="ml-2 text-xs">
-                                      <div className="text-red-400">Find: <code className="bg-slate-800 px-1 rounded">{action.findText.substring(0, 100)}{action.findText.length > 100 ? '...' : ''}</code></div>
-                                      <div className="text-green-400">Replace: <code className="bg-slate-800 px-1 rounded">{action.replaceWith?.substring(0, 100)}{action.replaceWith && action.replaceWith.length > 100 ? '...' : ''}</code></div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
                         </div>
                       ))}
                     </div>
