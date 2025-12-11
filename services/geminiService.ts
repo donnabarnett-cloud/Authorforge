@@ -1107,6 +1107,7 @@ Be SPECIFIC. Include exact text snippets for find-replace operations.`;
       }, 'analysis');
 
     return result.text || 'No fix plan generated';
+          }
 
   } catch (e: any) {
     console.error('Failed to generate fix plan:', e);
