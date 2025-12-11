@@ -1065,11 +1065,10 @@ Provide the updated chapter content that implements the fix. Return ONLY the upd
 export async function generateFixPlan(
   issue: TrilogyIssueAndFix,
   project: NovelProject
-): Promise<ChapterFixDetail[]> {
+): Promise<string[]> {
   try {
-    const chapterDetails: ChapterFixDetail[] = [];
     
-    // Generate fix plan for each chapter involved
+    // Generate x plan for each chapter involved
     for (const chapterRef of issue.chaptersInvolved) {
       const chapter = project.chapters.find(c => c.title === chapterRef.chapterTitle);
       if (!chapter) continue;
@@ -1107,21 +1106,13 @@ Be SPECIFIC. Include exact text snippets for find-replace operations.`;
         config: { responseMimeType: 'application/json' }
       }, 'analysis');
 
-      const parsed = extractJSON<{ actions: any[] }>(result.text);
-      
-      if (parsed && parsed.actions && parsed.actions.length > 0) {
-        chapterDetails.push({
-          chapterTitle: chapter.title,
-          chapterId: chapter.id,
-          actions: parsed.actions
-        });
-      }
-    }
-
-    return chapterDetails;
+          // Simply return the AI's response as a formatted string
+    const chapterList = issue.chaptersInvolved.map(c => c.chapterTitle).join(', ');
+    const formattedPlan = `FIX PLAN FOR: ${issue.title}\n\nCHAPTERS INVOLVED: ${chapterList}\n\nISSUE:\n${issue.description}\n\nGENERAL FIX:\n${issue.suggestedFix}\n\nDETAILED CHAPTER-BY-CHAPTER INSTRUCTIONS:\n\n${result.text}`;
     
+    return formattedPlan;
+
   } catch (e: any) {
     console.error('Failed to generate fix plan:', e);
-    return [];
-  }
+    return `Error generating fix plan: ${e.message}`;
 }
