@@ -139,8 +139,7 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({ project, onClose, ad
           <div className="text-center py-20">
             <GitMerge size={64} className="mx-auto text-slate-700 mb-6"/>
             <h3 className="text-xl font-bold mb-4">Trilogy Architecture & Continuity Scan</h3>
-            <p className="text-slate-400 max-w-lg mx-auto mb-8">
-              The AI will perform a multi-pass audit of your entire trilogy, focusing on high-level plot structure, character arcs, pacing, and granular continuity errors. It will ignore prose and focus only on the story's integrity.
+                    {initialState.issues.length === 0 && !initialState.isRunning && !initialState.statusText.includes('complete') ? (        The AI will perform a multi-pass audit of your entire trilogy, focusing on high-level plot structure, character arcs, pacing, and granular continuity errors. It will ignore prose and focus only on the story's integrity.
             </p>
             <Button size="lg" onClick={runScan} disabled={initialState.isRunning} icon={initialState.isRunning ? <Loader2 className="animate-spin"/> : <GitMerge/>}>
               {initialState.isRunning ? 'Analyzing Series...' : 'Start Series Diagnosis'}
