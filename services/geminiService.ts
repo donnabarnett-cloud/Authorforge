@@ -1069,6 +1069,10 @@ export async function generateFixPlan(
   try {
     
     // Generate x plan for each chapter involved
+          // Guard: Check if chaptersInvolved exists and is an array
+          if (!issue.chaptersInvolved || !Array.isArray(issue.chaptersInvolved) || issue.chaptersInvolved.length === 0) {
+                    return 'No chapters involved in this issue.';
+                  }
     for (const chapterRef of issue.chaptersInvolved) {
       const chapter = project.chapters.find(c => c.title === chapterRef.chapterTitle);
       if (!chapter) continue;
