@@ -1113,3 +1113,4 @@ Be SPECIFIC. Include exact text snippets for find-replace operations.`;
     console.error('Failed to generate fix plan:', e);
     return `Error generating fix plan: ${e.message}`;
 }
+    }
