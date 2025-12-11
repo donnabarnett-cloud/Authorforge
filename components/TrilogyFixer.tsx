@@ -181,7 +181,7 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({ project, onClose, ad
                       'bg-blue-900/30 text-blue-400'
                     }`}>{issue.type}</span>
                     <span className="text-sm text-slate-400 flex items-center gap-2"><FileText size={12} className="mr-1"/> 
-                      {issue.chaptersInvolved.map(c => c.chapterTitle).join(', ')}
+                      {(Array.isArray(issue.chaptersInvolved) ? issue.chaptersInvolved : [issue.chaptersInvolved]).join(', ')}
                     </span>
                   </div>
                   <Button size="sm" variant="secondary" icon={<Wand2 size={14}/>}>Open in Ghostwriter</Button>
