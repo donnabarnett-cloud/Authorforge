@@ -111,7 +111,7 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({ project, onClose, ad
           setLoadingPlan(issue.id);
 
           try {
-                  const plan = await generateFixPlan(project, issue);
+                  const plan = await generateFixPlan(issue, project);
                   setFixPlans(prev => new Map(prev).set(issue.id, plan));
                   setViewingPlan(issue.id);
                 } catch (e: any) {
