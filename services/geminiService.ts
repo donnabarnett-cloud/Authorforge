@@ -980,12 +980,9 @@ export async function fixAllTrilogyIssues(
     try {
       // Use AI to apply the suggested fix to the relevant chapters
       for (const chapterRef of issue.chaptersInvolved) {
-        const book = updatedProject.books.find(b => b.bookNumber === chapterRef.bookNumber);
-        if (!book) continue;
-        
-        const chapter = book.chapters.find(c => c.chapterNumber === chapterRef.chapterNumber);
-        if (!chapter) continue;
-        
+        // Find chapter by title match (chapters are flat in NovelProject)
+        const chapter = updatedProject.chapters.find(c => c.title === chapterRef.chapterTitle);
+        if (!chapter) continue;        
         const fixPrompt = `Apply this fix to the chapter content:
 
 ISSUE: ${issue.description}
