@@ -1076,7 +1076,6 @@ export async function generateFixPlan(
           // Guard: Check if chaptersInvolved exists and is an array
     if (!issue.chaptersInvolved) {                    return 'No chapters involved in this issue.';
                   }
-          }
 
         // Normalize chaptersInvolved to always be an array
         const chaptersArray = Array.isArray(issue.chaptersInvolved) ? issue.chaptersInvolved : [issue.chaptersInvolved];
