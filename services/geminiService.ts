@@ -1009,3 +1009,54 @@ Provide the updated chapter content that implements the fix. Return ONLY the upd
   onProgress('All fixes applied successfully!');
   return updatedProject;
 }
+
+// Fix a single trilogy issue using AI
+export async function fixSingleTrilogyIssue(
+  project: NovelProject,
+  issue: TrilogyIssueAndFix,
+  onProgress: (progressText: string) => void
+): Promise<NovelProject> {
+  const updatedProject = JSON.parse(JSON.stringify(project)) as NovelProject;
+  
+  onProgress(`Analyzing issue: ${issue.type}...`);
+  
+  try {
+    // Apply fix to each chapter involved in the issue
+    for (const chapterRef of issue.chaptersInvolved) {
+      const chapter = updatedProject.chapters.find(c => c.title === chapterRef.chapterTitle);
+      if (!chapter) continue;
+
+      onProgress(`Fixing ${chapter.title}...`);
+      
+      const fixPrompt = `Apply this fix to the chapter content:
+
+ISSUE TYPE: ${issue.type}
+ISSUE: ${issue.description}
+SUGGESTED FIX: ${issue.suggestedFix}
+
+CHAPTER CONTENT:
+${chapter.content}
+
+Provide the updated chapter content that implements the fix. Return ONLY the updated content, no explanations.`;
+      
+      const result = await generateAIContent({
+        model: 'gemini-2.5-flash',
+        contents: fixPrompt,
+        config: { responseMimeType: 'text/plain' }
+      }, 'analysis');
+      
+      if (result.text) {
+        chapter.content = result.text.trim();
+        chapter.wordCount = chapter.content.split(/\s+/).filter(Boolean).length;
+        chapter.lastModified = Date.now();
+      }
+    }
+    
+    onProgress('Fix applied successfully!');
+    return updatedProject;
+    
+  } catch (e: any) {
+    console.error('Failed to fix issue:', e);
+    throw new Error(`Failed to fix issue: ${e.message}. Check API key in Settings.`);
+  }
+}
