@@ -678,7 +678,7 @@ export async function getVideosOperation(operation: any): Promise<any> {
     return await ai.operations.getVideosOperation({ operation });
 }
 
-export async function generateBookCoverConcepts(project: NovelProject, ageGroup: string, artStyle: string, themePrompt: string): Promise<string[]> {
+export async function generateBookCoverConcepts(project: NovelProject, ageGroup: string, artStyle: string, themePrompt: string): Promise<string> {
     const prompt = `Generate 4 book cover art concepts for a ${ageGroup} ${project.genre} novel titled "${project.title}". The style is ${artStyle}. Core theme: ${themePrompt || project.synopsis}. No text on the image.`;
     const images = await Promise.all(Array(4).fill(0).map(() => generateImage(prompt, '3:4')));
     return images.filter(Boolean);
@@ -767,7 +767,7 @@ export async function generateListingOptimization(project: NovelProject, keyword
     return extractJSON<ListingOptimization>(result.text) || {} as ListingOptimization;
 }
 
-export async function generateJournalPrompts(topic: string): Promise<string[]> {
+export async function generateJournalPrompts(topic: string): Promise<string> {
     const prompt = `Generate 5 creative and insightful journal prompts related to "${topic}". They should be open-ended and encourage reflection.`;
     const result = await generateAIContent({ model: 'gemini-2.5-flash', contents: prompt }, 'writing');
     return result.text?.split('\n').filter(p => p.trim().match(/^\d+\.\s/)).map(p => p.replace(/^\d+\.\s/, '')) || [];
@@ -1065,7 +1065,7 @@ Provide the updated chapter content that implements the fix. Return ONLY the upd
 export async function generateFixPlan(
   issue: TrilogyIssueAndFix,
   project: NovelProject
-): Promise<string[]> {
+): Promise<string> {
   try {
     
     // Generate x plan for each chapter involved
@@ -1106,11 +1106,7 @@ Be SPECIFIC. Include exact text snippets for find-replace operations.`;
         config: { responseMimeType: 'application/json' }
       }, 'analysis');
 
-          // Simply return the AI's response as a formatted string
-    const chapterList = issue.chaptersInvolved.map(c => c.chapterTitle).join(', ');
-    const formattedPlan = `FIX PLAN FOR: ${issue.title}\n\nCHAPTERS INVOLVED: ${chapterList}\n\nISSUE:\n${issue.description}\n\nGENERAL FIX:\n${issue.suggestedFix}\n\nDETAILED CHAPTER-BY-CHAPTER INSTRUCTIONS:\n\n${result.text}`;
-    
-    return formattedPlan;
+    return result.text || 'No fix plan generated';
 
   } catch (e: any) {
     console.error('Failed to generate fix plan:', e);
