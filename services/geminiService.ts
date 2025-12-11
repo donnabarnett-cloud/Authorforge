@@ -1074,7 +1074,7 @@ export async function generateFixPlan(
                     return 'No chapters involved in this issue.';
                   }
     for (const chapterRef of issue.chaptersInvolved) {
-      const chapter = project.chapters.find(c => c.title === chapterRef.chapterTitle);
+      const chapter = project.chapters.find(c => c.title === chapterRef);
       if (!chapter) continue;
 
       const planPrompt = `Analyze this ${issue.type} issue and provide SPECIFIC, ACTIONABLE steps to fix it in this chapter.
