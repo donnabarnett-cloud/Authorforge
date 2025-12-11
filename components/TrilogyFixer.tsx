@@ -265,4 +265,5 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({
                 </div>
                                                       );
                           })}
+                  </div>
                                       };
