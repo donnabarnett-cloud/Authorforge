@@ -57,8 +57,7 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({ project, onClose, ad
     try {
       const updatedProject = await fixAllTrilogyIssues(
         project,
-        initialState.issues,
-        (progressText) => {
+        initialState.issues,     (progressText) => {
           onStateChange(prev => ({ ...prev, statusText: progressText }));
         }
       );
@@ -81,7 +80,8 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({ project, onClose, ad
           setFixingIssues(prev => new Set(prev).add(issue.id));
 
           try {
-                  const updatedProject = await fixSingleTrilogyIssue(project, issue);
+                  const updatedProject = await fixSingleTrilogyIssue(project, issue, (progressText) => {
+        onStateChange(prev => ({ ...prev, statusText: progressText }));
                   // Update project state would go here
                   setFixedIssues(prev => new Set(prev).add(issue.id));
                   addToast('success', `Fixed: ${issue.title}`, 'Fix Applied');
