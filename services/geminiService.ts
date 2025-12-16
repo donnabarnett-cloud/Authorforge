@@ -3,6 +3,7 @@ import { Project, AnalysisResult, ProjectHealth, MediaAnalysisResult, JournalPro
 import mammoth from 'mammoth';
 import { getEncoding } from 'js-tiktoken';
 import { v4 as uuidv4 } from 'uuid';
+import { retryWithBackoff } from '../utils/helpers';
 
 // --- Tokenizer ---
 let tokenizer: any;
