@@ -897,7 +897,116 @@ export async function findNicheCategories(query: string): Promise<CategoryAnalys
     return extractJSON<CategoryAnalysis[]>(result.text) || [];
 }
 
-export async function runTrilogyDoctor(project: NovelProject, onProgress: (progressText: string) => void, onIssueFound: (issue: TrilogyIssueAndFix) => void): Promise<void> {
+1008
+    , 
+                                       
+                                       // ===== STORY-AWARENESS FEATURES FOR TRILOGY SPLITTING =====
+
+// Extract character database with appearances and arcs
+export async function extractCharacterDatabase(project: NovelProject): Promise<{ id: string, name: string, role: string, appearances: string[], arcSummary: string }[]> {
+  const prompt = `Extract all characters from this manuscript. For each character, provide:
+  1. Name
+  2. Role (protagonist, antagonist, supporting, etc.)
+  3. List of chapter titles where they appear
+  4. Brief summary of their character arc
+  
+  Respond in JSON: { "characters": [{ "name": string, "role": string, "appearances": string[], "arcSummary": string }] }`;
+  
+  const context = getEfficientProjectContext(project);
+  const result = await generateAIContent({
+    model: 'gemini-3-pro-preview',
+    contents: `${prompt}\n\nMANUSCRIPT:\n${context}`,
+    config: { responseMimeType: 'application/json' }
+  }, 'analysis');
+  
+  const parsed = extractJSON<{ characters: any[] }>(result.text);
+  return (parsed?.characters || []).map(c => ({ ...c, id: uuidv4() }));
+}
+
+// Extract worldbuilding database with locations, rules, and lore
+export async function extractWorldbuildingDatabase(project: NovelProject): Promise<{ id: string, name: string, type: string, description: string, rulesOrConstraints?: string }[]> {
+  const prompt = `Extract all worldbuilding elements from this manuscript:
+  - Locations (cities, buildings, etc.)
+  - Magic systems or technology
+  - Important objects or artifacts
+  - Social structures or factions
+  - Rules or constraints of the world
+  
+  Respond in JSON: { "worldElements": [{ "name": string, "type": "location" | "magic" | "tech" | "object" | "faction" | "rule", "description": string, "rulesOrConstraints"?: string }] }`;
+  
+  const context = getEfficientProjectContext(project);
+  const result = await generateAIContent({
+    model: 'gemini-3-pro-preview',
+    contents: `${prompt}\n\nMANUSCRIPT:\n${context}`,
+    config: { responseMimeType: 'application/json' }
+  }, 'analysis');
+  
+  const parsed = extractJSON<{ worldElements: any[] }>(result.text);
+  return (parsed?.worldElements || []).map(w => ({ ...w, id: uuidv4() }));
+}
+
+// Generate chapter synopses with timeline stamps
+export async function generateChapterSynopsesWithTimeline(project: NovelProject, onProgress: (progressText: string) => void): Promise<{ chapterId: string, synopsis: string, timelineStamp: string, charactersPresent: string[], plotBeats: string[] }[]> {
+  const synopses: any[] = [];
+  
+  for (let i = 0; i < project.chapters.length; i++) {
+    const chapter = project.chapters[i];
+    onProgress(`Generating synopsis for ${chapter.title} (${i + 1}/${project.chapters.length})...`);
+    
+    const prompt = `Analyze this chapter and provide:
+    1. A 2-3 sentence synopsis
+    2. Timeline information (e.g., "Day 1", "3 weeks later", "simultaneous with Chapter X", "flashback to 10 years ago")
+    3. Characters present in this chapter
+    4. Key plot beats
+    
+    Respond in JSON: { "synopsis": string, "timelineStamp": string, "charactersPresent": string[], "plotBeats": string[] }`;
+    
+    const result = await generateAIContent({
+      model: 'gemini-2.5-flash',
+      contents: `${prompt}\n\nCHAPTER: ${chapter.title}\n\n${chapter.content.substring(0, 5000)}`,
+      config: { responseMimeType: 'application/json' }
+    }, 'analysis');
+    
+    const parsed = extractJSON<any>(result.text);
+    if (parsed) {
+      synopses.push({
+        chapterId: chapter.id,
+        synopsis: parsed.synopsis || '',
+        timelineStamp: parsed.timelineStamp || 'Unknown',
+        charactersPresent: parsed.charactersPresent || [],
+        plotBeats: parsed.plotBeats || []
+      });
+    }
+    
+    // Rate limit buffer
+    await new Promise(r => setTimeout(r, 500));
+  }
+  
+  return synopses;
+}
+
+// Detect and flag timeline inconsistencies
+export async function detectTimelineInconsistencies(synopses: any[]): Promise<{ issue: string, affectedChapters: string[] }[]> {
+  const prompt = `Analyze these chapter synopses and timeline stamps for inconsistencies:
+  - Characters appearing before they're introduced
+  - Events happening out of logical order
+  - Timeline jumps that don't make sense
+  - Characters knowing things they shouldn't know yet
+  
+  Respond in JSON: { "inconsistencies": [{ "issue": string, "affectedChapters": string[] }] }`;
+  
+  const result = await generateAIContent({
+    model: 'gemini-3-pro-preview',
+    contents: `${prompt}\n\nSYNOPSES:\n${JSON.stringify(synopses, null, 2)}`,
+    config: { responseMimeType: 'application/json' }
+  }, 'analysis');
+  
+  const parsed = extractJSON<{ inconsistencies: any[] }>(result.text);
+  return parsed?.inconsistencies || [];
+}
+
+// Enhanced trilogy doctor that uses story codex
+onProgress: (progressText: string) => void, onIssueFound: (issue: TrilogyIssueAndFix) => void): Promise<void> {
   const batchSize = currentSettings.activeProvider === 'webllm' ? 5 : 10;
   
   try {
@@ -905,7 +1014,33 @@ export async function runTrilogyDoctor(project: NovelProject, onProgress: (progr
     
     // Batch chapters for analysis
     const batches = [];
-    for (let i = 0; i < project.chapters.length; i += batchSize) {
+    for (let i = 0; i < project.chapters.length
+             
+    // Step 1: Extract story codex (characters, worldbuilding, timeline)
+    onProgress('Extracting character database...');
+    const characters = await extractCharacterDatabase(project);
+    
+    onProgress('Extracting worldbuilding database...');
+    const worldElements = await extractWorldbuildingDatabase(project);
+    
+    onProgress('Generating chapter synopses with timeline...');
+    const synopses = await generateChapterSynopsesWithTimeline(project, onProgress);
+    
+    onProgress('Detecting timeline inconsistencies...');
+    const timelineIssues = await detectTimelineInconsistencies(synopses);
+    
+    // Report timeline issues as TrilogyIssueAndFix objects
+    for (const timelineIssue of timelineIssues) {
+      onIssueFound({
+        id: uuidv4(),
+        type: 'Timeline',
+        severity: 'Major',
+        description: timelineIssue.issue,
+        chaptersInvolved: timelineIssue.affectedChapters,
+        suggestedFix: 'Review the timeline and adjust the order or add transitional text to clarify the time jump.'
+      });
+    }
+    ; i += batchSize) {
       batches.push(project.chapters.slice(i, i + batchSize));
     }
     
