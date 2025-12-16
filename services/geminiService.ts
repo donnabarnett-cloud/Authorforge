@@ -1259,4 +1259,216 @@ Be SPECIFIC. Include exact text snippets for find-replace operations.`;
     console.error('Failed to generate fix plan:', e);
     return `Error generating fix plan: ${e.message}`;
 }
+
+    // ===== BOOK TRAILER GENERATION (AUDIO + SLIDESHOW) =====
+
+// Generate script for 1-minute book trailer
+export async function generateBookTrailerScript(project: NovelProject): Promise<{ script: string, scenes: string[] }> {
+  const prompt = `Create a compelling 1-minute book trailer script for "${project.title}" (${project.genre}).
+  
+  The script should:
+  - Be exactly 60 seconds when read aloud (approximately 150 words)
+  - Hook the audience immediately
+  - Tease the main conflict without spoilers
+  - End with a compelling call-to-action
+  - Include 5-6 scene descriptions for background visuals
+  
+  Synopsis: ${project.synopsis}
+  
+  Respond in JSON: {
+    "script": "The narration script (150 words max)",
+    "scenes": ["Scene 1 description for image generation", "Scene 2...", etc]
+  }`;
+  
+  const result = await generateAIContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: { responseMimeType: 'application/json' }
+  }, 'writing');
+  
+  return extractJSON<{ script: string, scenes: string[] }>(result.text) || { script: '', scenes: [] };
+}
+
+// Generate audio from text using Web Speech API or return audio URL
+export async function generateTrailerAudio(script: string): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    // Check if browser supports Speech Synthesis
+    if (!('speechSynthesis' in window)) {
+      reject(new Error('Speech synthesis not supported in this browser'));
+      return;
+    }
+    
+    // Create speech synthesis utterance
+    const utterance = new SpeechSynthesisUtterance(script);
+    utterance.rate = 0.9; // Slightly slower for dramatic effect
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    // Use MediaRecorder to capture audio
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const mediaStreamDestination = audioContext.createMediaStreamDestination();
+    const mediaRecorder = new MediaRecorder(mediaStreamDestination.stream);
+    const audioChunks: BlobPart[] = [];
+    
+    mediaRecorder.ondataavailable = (event) => {
+      audioChunks.push(event.data);
+    };
+    
+    mediaRecorder.onstop = () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      resolve(audioBlob);
+    };
+    
+    // Start recording and speak
+    mediaRecorder.start();
+    window.speechSynthesis.speak(utterance);
+    
+    utterance.onend = () => {
+      mediaRecorder.stop();
+      audioContext.close();
+    };
+    
+    utterance.onerror = (error) => {
+      mediaRecorder.stop();
+      audioContext.close();
+      reject(error);
+    };
+  });
+}
+
+// Generate scene images for the trailer
+export async function generateTrailerSceneImages(scenes: string[]): Promise<string[]> {
+  const images: string[] = [];
+  
+  for (const scene of scenes) {
+    const imagePrompt = `Cinematic book trailer scene: ${scene}. Dramatic lighting, professional composition, movie poster quality.`;
+    try {
+      const imageUrl = await generateImage(imagePrompt, '16:9');
+      images.push(imageUrl);
+    } catch (e) {
+      console.error('Failed to generate scene image:', e);
+      images.push(''); // Placeholder for failed image
+    }
+  }
+  
+  return images;
+}
+
+// Create book trailer video (audio + slideshow)
+export async function generateBookTrailer(
+  project: NovelProject,
+  onProgress: (progress: string) => void
+): Promise<{ videoBlob: Blob, script: string, images: string[] }> {
+  try {
+    onProgress('Generating trailer script...');
+    const { script, scenes } = await generateBookTrailerScript(project);
+    
+    onProgress('Generating scene images...');
+    const images = await generateTrailerSceneImages(scenes);
+    
+    onProgress('Generating voiceover audio...');
+    const audioBlob = await generateTrailerAudio(script);
+    
+    onProgress('Compiling trailer video...');
+    // Create video with slideshow and audio
+    const videoBlob = await createVideoWithSlideshow(images, audioBlob, 60);
+    
+    onProgress('Trailer complete!');
+    return { videoBlob, script, images };
+  } catch (error: any) {
+    throw new Error(`Failed to generate book trailer: ${error.message}`);
+  }
+}
+
+// Helper function to create video from images and audio
+async function createVideoWithSlideshow(
+  images: string[],
+  audioBlob: Blob,
+  duration: number
+): Promise<Blob> {
+  // This creates a simple video using Canvas API and MediaRecorder
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1920;
+    canvas.height = 1080;
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) {
+      reject(new Error('Could not get canvas context'));
+      return;
+    }
+    
+    // Create video stream from canvas
+    const stream = canvas.captureStream(30); // 30 FPS
+    
+    // Add audio track to video stream
+    const audioContext = new AudioContext();
+    const reader = new FileReader();
+    
+    reader.onload = async () => {
+      try {
+        const audioBuffer = await audioContext.decodeAudioData(reader.result as ArrayBuffer);
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        
+        const dest = audioContext.createMediaStreamDestination();
+        source.connect(dest);
+        
+        // Combine video and audio streams
+        const videoTrack = stream.getVideoTracks()[0];
+        const audioTrack = dest.stream.getAudioTracks()[0];
+        const combinedStream = new MediaStream([videoTrack, audioTrack]);
+        
+        const mediaRecorder = new MediaRecorder(combinedStream, {
+          mimeType: 'video/webm;codecs=vp9,opus'
+        });
+        
+        const chunks: BlobPart[] = [];
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const videoBlob = new Blob(chunks, { type: 'video/webm' });
+          resolve(videoBlob);
+        };
+        
+        // Start recording
+        mediaRecorder.start();
+        source.start(0);
+        
+        // Draw slideshow
+        const timePerImage = duration / images.length;
+        let currentImageIndex = 0;
+        
+        const drawFrame = async () => {
+          if (currentImageIndex < images.length) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = images[currentImageIndex];
+            
+            img.onload = () => {
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              currentImageIndex++;
+              
+              if (currentImageIndex < images.length) {
+                setTimeout(drawFrame, timePerImage * 1000);
+              } else {
+                // Video complete
+                setTimeout(() => {
+                  mediaRecorder.stop();
+                  source.stop();
+                }, 500);
+              }
+            };
+          }
+        };
+        
+        drawFrame();
+      } catch (error) {
+        reject(error);
+      }
+    };
+    
+    reader.onerror = () => reject(new Error('Failed to read audio blob'));
+    reader.readAsArrayBuffer(audioBlob);
+  });
+}
     }
