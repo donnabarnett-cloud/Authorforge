@@ -439,7 +439,8 @@ export async function performDeepLineEdit(text: string, project: NovelProject, i
 }
 
 export async function extractWorldInfo(storyBible: string): Promise<{ characters: Partial<Character>[], worldItems: Partial<WorldItem>[] }> {
-    const prompt = `Extract characters and world items from this story bible. Respond in JSON: { "characters": [{ "name": string, "role": string, "description": string, "traits": string[] }], "worldItems": [{ "name": string, "category": string, "description": string }] }`;
+    co  const chapterRegex =
+    /(?:^|\n)(?:Chapter|Book|Part|Prologue|Epilogue)\s+\d+(?:[^\n]*)?/gi;`Extract characters and world items from this story bible. Respond in JSON: { "characters": [{ "name": string, "role": string, "description": string, "traits": string[] }], "worldItems": [{ "name": string, "category": string, "description": string }] }`;
     const result = await generateAIContent({ model: 'gemini-2.5-flash', contents: `${prompt}\n\nBIBLE:\n${storyBible}`, config: { responseMimeType: 'application/json' } }, 'analysis');
     return extractJSON(result.text) || { characters: [], worldItems: [] };
 }
