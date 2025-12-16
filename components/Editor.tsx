@@ -4,6 +4,7 @@ import { applyBrush, generateChapterContent, analyzeSelection, injectSensoryDeta
 import { Button } from './Button';
 import { ChapterSnapshot, Character, ToastMessage, AIAgent, NovelProject } from '../types';
 import { DiffViewer } from './DiffViewer';
+import { debounce } from '../utils/helpers';
 
 interface EditorProps {
   content: string;
