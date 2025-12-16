@@ -1013,7 +1013,6 @@ export async function analyzeTrilogyWithCodex(project: NovelProject, onProgress:
     
     // Batch chapters for analysis
     const batches = [];
-    for (let i = 0; i < project.chapters.length
              
     // Step 1: Extract story codex (characters, worldbuilding, timeline)
     onProgress('Extracting character database...');
