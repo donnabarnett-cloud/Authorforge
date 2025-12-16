@@ -1038,9 +1038,6 @@ export async function analyzeTrilogyWithCodex(project: NovelProject, onProgress:
         suggestedFix: 'Review the timeline and adjust the order or add transitional text to clarify the time jump.'
       });
     }
-    ; i += batchSize) {
-      batches.push(project.chapters.slice(i, i + batchSize));
-    }
     
     for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
       const batch = batches[batchIndex];
