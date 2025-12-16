@@ -1005,7 +1005,7 @@ export async function detectTimelineInconsistencies(synopses: any[]): Promise<{ 
 }
 
 // Enhanced trilogy doctor that uses story codex
-export async function analyzeTrilogyWithCodex(project: NovelProject, onProgress: (progressText: string) => void, onIssueFound: (issue: TrilogyIssueAndFix) => void): Promise<void> {
+onProgress: (progressText: string) => void, onIssueFound: (issue: TrilogyIssueAndFix) => void): Promise<void> {
   const batchSize = currentSettings.activeProvider === 'webllm' ? 5 : 10;
   
   try {
@@ -1013,6 +1013,7 @@ export async function analyzeTrilogyWithCodex(project: NovelProject, onProgress:
     
     // Batch chapters for analysis
     const batches = [];
+    for (let i = 0; i < project.chapters.length
              
     // Step 1: Extract story codex (characters, worldbuilding, timeline)
     onProgress('Extracting character database...');
@@ -1037,6 +1038,9 @@ export async function analyzeTrilogyWithCodex(project: NovelProject, onProgress:
         chaptersInvolved: timelineIssue.affectedChapters,
         suggestedFix: 'Review the timeline and adjust the order or add transitional text to clarify the time jump.'
       });
+    }
+    ; i += batchSize) {
+      batches.push(project.chapters.slice(i, i + batchSize));
     }
     
     for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
