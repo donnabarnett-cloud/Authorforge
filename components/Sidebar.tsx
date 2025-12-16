@@ -93,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             { id: 'media', label: 'Media Studio', icon: Image, projectType: 'novel' },
             { id: 'publishing', label: 'Publishing', icon: Share2, projectType: 'novel' },
             { id: 'team', label: 'AI Team', icon: Briefcase },
-            { id: 'claude', label: 'Muse Chat', icon: Sparkles },
+//             { id: 'claude', label: 'Muse Chat', icon: Sparkles },
         ];
         
         const activeProjectTabs = mainTabs.filter(tab => {
