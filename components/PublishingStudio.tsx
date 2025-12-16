@@ -104,6 +104,38 @@ export const PublishingStudio: React.FC<PublishingStudioProps> = ({ project, onU
         setIsLoading(false);
         setActiveTab('calendar');
         addToast('success', `${posts.length} posts generated and scheduled!`);
+
+        const [trailerProgress, setTrailerProgress] = useState('');
+  const [generatedTrailer, setGeneratedTrailer] = useState<{ videoBlob: Blob, script: string, images: string[] } | null>(null);
+  
+  const handleGenerateBookTrailer = async () => {
+    if (project.projectType !== 'novel') return;
+    setIsLoading(true);
+    setTrailerProgress('Starting book trailer generation...');
+    try {
+      const trailer = await generateBookTrailer(project as NovelProject, (progress) => {
+        setTrailerProgress(progress);
+      });
+      
+      setGeneratedTrailer(trailer);
+      addToast('success', 'Book trailer generated! Click to download.');
+      setTrailerProgress('');
+      
+      // Auto-download the video
+      const url = URL.createObjectURL(trailer.videoBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${project.title}_trailer.webm`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      addToast('error', `Failed to generate book trailer: ${e.message}`);
+      console.error(e);
+    }
+    setIsLoading(false);
+  };
     };
 
     const copyToClipboard = (text: string) => {
@@ -207,6 +239,23 @@ export const PublishingStudio: React.FC<PublishingStudioProps> = ({ project, onU
                         <Button onClick={handleGenerateCampaign} disabled={isLoading || selectedPlatforms.length === 0 || project.projectType !== 'novel'} icon={isLoading ? <Loader2 className="animate-spin"/> : <Rocket />}>
                             Generate Campaign
                         </Button>
+                                
+          <div className="mt-6 border-t border-slate-200 dark:border-slate-800 pt-6">
+            <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">📽️ Generate Book Trailer (Beta)</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Create a 1-minute video trailer with AI-generated voiceover and cinematic scene images.</p>
+            {trailerProgress && (
+              <div className="mb-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                <p className="text-sm text-indigo-700 dark:text-indigo-300">{trailerProgress}</p>
+              </div>
+            )}
+            <Button 
+              onClick={handleGenerateBookTrailer} 
+              disabled={isLoading || project.projectType !== 'novel'} 
+              icon={isLoading ? <Loader2 className="animate-spin"/> : <Rocket />}
+            >
+              Generate Book Trailer
+            </Button>
+          </div>
                     </div>
                 )}
                 {activeTab === 'website' && project.projectType === 'novel' && (
