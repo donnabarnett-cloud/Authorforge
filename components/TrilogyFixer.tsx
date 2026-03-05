@@ -85,6 +85,8 @@ export const TrilogyFixer: React.FC<TrilogyFixerProps> = ({ project, onClose, ad
                   // Update project state would go here
                   setFixedIssues(prev => new Set(prev).add(issue.id));
                   addToast('success', `Fixed: ${issue.title}`, 'Fix Applied');
+      });
+    
                 } catch (e: any) {
                   console.error('Fix failed:', e);
                   addToast('error', e.message, 'Fix Failed');
