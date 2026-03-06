@@ -1004,7 +1004,7 @@ export async function detectTimelineInconsistencies(synopses: any[]): Promise<{ 
 }
 
 export async function runTrilogyDoctor(project: NovelProject, // Enhanced trilogy doctor that uses story codex
-onProgress: (progressText: string) => void, onIssueFound: (issue: TrilogyIssueAndFix) => void): Promise<void> {
+onProgress: (progressText: string) => void, onIssueFound: (issue: TrilogyIssueAndFix) => void): Promise<void> {): Promise<void> 
   const batchSize = currentSettings.activeProvider === 'webllm' ? 5 : 10;
   
   try {
