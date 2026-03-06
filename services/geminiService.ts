@@ -439,8 +439,7 @@ export async function performDeepLineEdit(text: string, project: NovelProject, i
 }
 
 export async function extractWorldInfo(storyBible: string): Promise<{ characters: Partial<Character>[], worldItems: Partial<WorldItem>[] }> {
-    co  const chapterRegex =
-    /(?:^|\n)(?:Chapter|Book|Part|Prologue|Epilogue)\s+\d+(?:[^\n]*)?/gi;`Extract characters and world items from this story bible. Respond in JSON: { "characters": [{ "name": string, "role": string, "description": string, "traits": string[] }], "worldItems": [{ "name": string, "category": string, "description": string }] }`;
+const prompt = `Extract characters and world items from this story bible. Respond in JSON: { "characters": [{ "name": string, "role": string, "description": string, "traits": string[] }], "worldItems": [{ "name": string, "category": string, "description": string }] }`;
     const result = await generateAIContent({ model: 'gemini-2.5-flash', contents: `${prompt}\n\nBIBLE:\n${storyBible}`, config: { responseMimeType: 'application/json' } }, 'analysis');
     return extractJSON(result.text) || { characters: [], worldItems: [] };
 }
@@ -1006,7 +1005,7 @@ export async function detectTimelineInconsistencies(synopses: any[]): Promise<{ 
   return parsed?.inconsistencies || [];
 }
 
-// Enhanced trilogy doctor that uses story codex
+export async function runTrilogyDoctor(project: NovelProject, // Enhanced trilogy doctor that uses story codex
 onProgress: (progressText: string) => void, onIssueFound: (issue: TrilogyIssueAndFix) => void): Promise<void> {
   const batchSize = currentSettings.activeProvider === 'webllm' ? 5 : 10;
   
