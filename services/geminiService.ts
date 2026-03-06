@@ -897,8 +897,6 @@ export async function findNicheCategories(query: string): Promise<CategoryAnalys
     return extractJSON<CategoryAnalysis[]>(result.text) || [];
 }
 
-1008
-    , 
                                        
                                        // ===== STORY-AWARENESS FEATURES FOR TRILOGY SPLITTING =====
 
